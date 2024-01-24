@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include "../cJSON.h"
+#include <signal.h>
 
 #define BUF_SIZE 256
 #define MAX_USER 4
@@ -117,6 +118,7 @@ void disconnected(int sock)
 	{
 		game_start = 0;
 		usr_cnt = 0;
+		exit(0);
 	}
 	pthread_mutex_unlock(&mutx);
 	close(sock);
@@ -238,10 +240,17 @@ void error_handling(char * msg)
 	exit(1);
 }
 
+int serv_sock;
+void alarm_handler(){
+	free(json_serialize);
+        close(serv_sock);
+	exit(0);
+}
+
 //this is MAIN function
 int main(int argc, char *argv[])
 {
-	int serv_sock, clnt_sock;
+	int clnt_sock;
 	struct sockaddr_in serv_adr, clnt_adr;
 	unsigned int clnt_adr_sz;
 	pthread_t t_id;
@@ -266,7 +275,7 @@ int main(int argc, char *argv[])
 	
 	if (listen(serv_sock, 5) == -1)
 		error_handling("listen() error");
-	
+	signal(SIGALRM, alarm_handler);
 	while (1)
 	{
 		clnt_adr_sz = sizeof(clnt_adr);

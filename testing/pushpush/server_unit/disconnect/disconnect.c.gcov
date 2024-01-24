@@ -1,0 +1,84 @@
+        -:    0:Source:disconnect.c
+        -:    0:Graph:disconnect.gcno
+        -:    0:Data:disconnect.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include <unistd.h>
+        -:    3:#include <fcntl.h>
+        -:    4:#include <string.h>
+        -:    5:#include <stdlib.h>
+        -:    6:
+        -:    7:int game_start;
+        -:    8:int usr_cnt;
+        -:    9:
+        -:   10:int clnt_cnt = 1024;
+        -:   11:int clnt_socks[1024]; //sock의 최대 개수는 최대 멤버 수일 것이기 때문에 여기서는 임의로 지정.
+        -:   12:
+function disconnected called 1 returned 100% blocks executed 92%
+        1:   13:void disconnected(int sock)
+        -:   14:{
+        2:   15:        for (int i = 0; i < clnt_cnt; i++)   // remove disconnected client
+branch  0 taken 2
+branch  1 taken 0 (fallthrough)
+        -:   16:        {
+        2:   17:                if (sock == clnt_socks[i])
+branch  0 taken 1 (fallthrough)
+branch  1 taken 1
+        -:   18:                {
+     1024:   19:                        while (i < clnt_cnt-1)
+branch  0 taken 1022
+branch  1 taken 1 (fallthrough)
+        -:   20:                        {
+     1022:   21:                                clnt_socks[i] = clnt_socks[i+1];
+     1022:   22:                                i++;
+        -:   23:                        }
+        1:   24:                        break;
+        -:   25:                }
+        -:   26:        }
+        1:   27:        clnt_cnt--;
+        -:   28:
+        1:   29:        if(clnt_cnt == 0)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+        -:   30:        {
+    #####:   31:                game_start = 0;
+    #####:   32:                usr_cnt = 0;
+    #####:   33:		return;
+        -:   34:        }
+        1:   35:        printf("close(%d);\n", sock);
+call    0 returned 1
+        -:   36:}
+        -:   37:
+function main called 1 returned 100% blocks executed 100%
+        1:   38:int main()
+        -:   39:{
+        1:   40:	int fd = open("test.txt", O_RDONLY);
+call    0 returned 1
+        -:   41:	char buf[4096];
+        -:   42:
+        1:   43:	read(fd, buf, 4096);
+call    0 returned 1
+        1:   44:	char *token = strtok(buf," ");	
+call    0 returned 1
+        -:   45:	
+        -:   46:
+        1:   47:	int i = 0;
+        7:   48:	while(token != NULL){
+branch  0 taken 5
+branch  1 taken 1 (fallthrough)
+        5:   49:		clnt_socks[i]= atoi(token);
+        5:   50:		token = strtok(NULL," ");
+call    0 returned 5
+        5:   51:		i++;
+        -:   52:	}
+        6:   53:	for(int a = 0; a < i; a++){
+branch  0 taken 5
+branch  1 taken 1 (fallthrough)
+        5:   54:		printf("%d\n",clnt_socks[a]);
+call    0 returned 5
+        -:   55:	}
+        -:   56:	
+        1:   57:	disconnected(clnt_socks[1]);
+call    0 returned 1
+        -:   58:}

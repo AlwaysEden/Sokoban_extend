@@ -1,0 +1,6 @@
+File 'loadJson.c'
+Lines executed:71.05% of 38
+Branches executed:100.00% of 14
+Taken at least once:57.14% of 14
+Calls executed:56.25% of 16
+Creating 'loadJson.c.gcov'

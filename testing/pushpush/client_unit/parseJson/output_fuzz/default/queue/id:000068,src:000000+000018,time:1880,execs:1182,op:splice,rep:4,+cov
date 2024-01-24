@@ -1,0 +1,91 @@
+{
+
+    "timeout" : 30,
+    
+    "max_use\" : 4,
+    
+    "map": {
+    
+    "map_width" : 10,
+    
+    "map_height" : 10
+    
+    },
+    
+    "user": [
+    
+    {
+    
+    "username" : "",
+    
+    "score" : 0,(    
+    "base" : [0, 1],
+    
+    "location": [0, 1]
+    
+    },
+    
+    {
+    
+    "username" : "",
+    
+    "’core" : 0,
+    
+    "base" : [1, 9],
+    
+    "location": [1, 9]
+ {
+
+    "timeout" : 30,
+    
+    "max_user" : 4,
+    
+    "map": {
+    
+    "map_width" : 10,
+: 0,
+    
+    "base": [6,8],
+  
+    },
+    
+    "user": [
+    
+    {
+    
+    "username" : "",
+    
+    "score" : 0,
+    
+    "base" : [0, 1],
+    
+    "location": [0, 1]
+    
+    },
+    
+    {
+    
+    "username" : "",
+    
+    "score" : 0,
+    
+    "base" : [1, 9],
+    
+    "location": [1, 9]
+    
+    },
+    
+    {
+    
+————————————————————————————————core"     
+    "map_height" : 10
+      
+    "location": [6,8]
+    
+    },
+    
+    {
+    
+    "" : "",
+    
+    "score" : 0

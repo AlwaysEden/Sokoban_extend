@@ -1,0 +1,218 @@
+        -:    0:Source:parseJson.c
+        -:    0:Graph:parseJson.gcno
+        -:    0:Data:parseJson.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include "../../../../cJSON.h"
+        -:    4:#include <string.h>
+        -:    5:#include <sys/stat.h>
+        -:    6:
+        -:    7:
+        -:    8:#define NAME_SIZE 16
+        -:    9:
+        -:   10:typedef struct location{
+        -:   11:    int x;
+        -:   12:    int y;
+        -:   13:} location_t;
+        -:   14:
+        -:   15:typedef struct user{
+        -:   16:    char name[NAME_SIZE];
+        -:   17:    int score;
+        -:   18:    location_t base_loc;
+        -:   19:    location_t user_loc;
+        -:   20:}user_t;
+        -:   21:
+        -:   22:typedef struct object_data{
+        -:   23:    int map_width;
+        -:   24:        int map_height;
+        -:   25:    int timeout;
+        -:   26:    int max_user;
+        -:   27:    struct user * users;
+        -:   28:    location_t * item_locations;
+        -:   29:    location_t * block_locations;
+        -:   30:}object_data_t;
+        -:   31:
+        -:   32:object_data_t Model;
+        -:   33:
+        -:   34:int num_item;
+        -:   35:int current_num_item;
+        -:   36:int num_block;
+        -:   37:
+function parseJson called 1 returned 100% blocks executed 92%
+        1:   38:int parseJson(char * jsonfile) {
+        -:   39:
+        -:   40:    	cJSON* root;
+        1:   41:        root = cJSON_Parse(jsonfile);
+call    0 returned 1
+        1:   42:        if (root == NULL /*|| root->next == NULL*/) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+    #####:   43:                printf("JSON parsing error: %s\n", cJSON_GetErrorPtr());
+call    0 never executed
+call    1 never executed
+    #####:   44:                return 1;
+        -:   45:        }
+        -:   46:
+        1:   47:        cJSON* timeout = cJSON_GetObjectItem(root, "timeout");
+call    0 returned 1
+        1:   48:        Model.timeout = timeout->valueint;
+        1:   49:        cJSON* max_user = cJSON_GetObjectItem(root, "max_user");
+call    0 returned 1
+        1:   50:        Model.max_user = max_user->valueint;
+        -:   51:
+        1:   52:        cJSON* map = cJSON_GetObjectItem(root, "map");
+call    0 returned 1
+        1:   53:        cJSON* map_width = cJSON_GetObjectItem(map, "map_width");
+call    0 returned 1
+        1:   54:        Model.map_width = map_width->valueint;
+        1:   55:        cJSON* map_height = cJSON_GetObjectItem(map, "map_height");
+call    0 returned 1
+        1:   56:        Model.map_height = map_height->valueint;
+        -:   57:
+        1:   58:        cJSON* user = cJSON_GetObjectItem(root, "user");
+call    0 returned 1
+        1:   59:        Model.users = (struct user *)malloc(sizeof(struct user) * Model.max_user);
+        2:   60:        for(int i = 0; i < Model.max_user; i++){
+branch  0 taken 1
+branch  1 taken 1 (fallthrough)
+        1:   61:                memset(Model.users[i].name, 0, sizeof(NAME_SIZE));
+        1:   62:                Model.users[i].score = 0;
+        1:   63:                cJSON* user_array = cJSON_GetArrayItem(user,i);
+call    0 returned 1
+        1:   64:            cJSON* base = cJSON_GetObjectItem(user_array,"base");
+call    0 returned 1
+        1:   65:                cJSON* base_x = cJSON_GetArrayItem(base, 0);
+call    0 returned 1
+        1:   66:                cJSON* base_y = cJSON_GetArrayItem(base, 1);
+call    0 returned 1
+        1:   67:                cJSON* user_location = cJSON_GetObjectItem(user_array,"location");
+call    0 returned 1
+        1:   68:                cJSON* user_x = cJSON_GetArrayItem(user_location, 0);
+call    0 returned 1
+        1:   69:                cJSON* user_y = cJSON_GetArrayItem(user_location, 1);
+call    0 returned 1
+        1:   70:                Model.users[i].user_loc.x = user_x->valueint;
+        1:   71:                Model.users[i].user_loc.y = user_y->valueint;
+        1:   72:                Model.users[i].base_loc.x = base_x->valueint;
+        1:   73:                Model.users[i].base_loc.y = base_y->valueint;
+        -:   74:        #ifdef DEBUG
+        -:   75:                printf("name: %s\n",Model.users[i].name);
+        -:   76:                printf("base x: %d\n",Model.users[i].base_loc.x);
+        -:   77:                printf("base y: %d\n",Model.users[i].base_loc.y);
+        -:   78:        #endif
+        -:   79:        }
+        -:   80:
+        1:   81:        cJSON * item = cJSON_GetObjectItem(root, "item_location");
+call    0 returned 1
+        1:   82:        num_item = cJSON_GetArraySize(item);
+call    0 returned 1
+        1:   83:        current_num_item = num_item;
+        1:   84:        Model.item_locations = (struct location *)malloc(sizeof(struct location) * num_item);
+        7:   85:        for(int i = 0; i < num_item; i++){
+branch  0 taken 6
+branch  1 taken 1 (fallthrough)
+        6:   86:                cJSON* item_array = cJSON_GetArrayItem(item,i);
+call    0 returned 6
+        6:   87:                cJSON* item_x = cJSON_GetArrayItem(item_array, 0);
+call    0 returned 6
+        6:   88:                cJSON* item_y = cJSON_GetArrayItem(item_array, 1);
+call    0 returned 6
+        6:   89:                Model.item_locations[i].x = item_x->valueint;
+        6:   90:                Model.item_locations[i].y = item_y->valueint;
+        -:   91:        #ifdef DEBUG
+        -:   92:                printf("item x: %d\n",Model.item_locations[i].x);
+        -:   93:                printf("item y: %d\n",Model.item_locations[i].y);
+        -:   94:                #endif
+        -:   95:        }
+        -:   96:
+        1:   97:        cJSON * block = cJSON_GetObjectItem(root, "block_location");
+call    0 returned 1
+        1:   98:        num_block = cJSON_GetArraySize(block);
+call    0 returned 1
+        1:   99:        Model.block_locations = (struct location *)malloc(sizeof(struct location) * num_block);
+        6:  100:        for(int i = 0; i < num_block; i++){
+branch  0 taken 5
+branch  1 taken 1 (fallthrough)
+        5:  101:                cJSON* block_array = cJSON_GetArrayItem(block,i);
+call    0 returned 5
+        5:  102:                cJSON* block_x = cJSON_GetArrayItem(block_array, 0);
+call    0 returned 5
+        5:  103:                cJSON* block_y = cJSON_GetArrayItem(block_array, 1);
+call    0 returned 5
+        5:  104:                Model.block_locations[i].x = block_x->valueint;
+        5:  105:                Model.block_locations[i].y = block_y->valueint;
+        -:  106:        #ifdef DEBUG
+        -:  107:                printf("block x: %d\n",Model.block_locations[i].x);
+        -:  108:                printf("block y: %d\n",Model.block_locations[i].y);
+        -:  109:        #endif
+        -:  110:        }
+        -:  111:
+        1:  112:        return 0;
+        -:  113:}
+        -:  114:
+        -:  115:
+function main called 1 returned 100% blocks executed 57%
+        1:  116:int main(){
+        -:  117:	char filepath[256];
+        1:  118:	fgets(filepath, 255, stdin);
+call    0 returned 1
+        -:  119:
+        1:  120:	filepath[strlen(filepath)-1] = 0x0;
+        1:  121:	FILE *file = fopen(filepath,"r");
+call    0 returned 1
+        1:  122:        if(file == NULL)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+        -:  123:        {
+    #####:  124:                fprintf(stderr,"ERROR: open file");
+call    0 never executed
+    #####:  125:                return 1;
+        -:  126:        }
+        -:  127:        struct stat st;
+        1:  128:        if(stat(filepath, &st) == -1)
+call    0 returned 1
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1
+        -:  129:        {
+    #####:  130:                fprintf(stderr,"ERROR: stat()\n");
+call    0 never executed
+    #####:  131:                return 1;
+        -:  132:        }
+        1:  133:        int size = st.st_size;
+        -:  134:
+        1:  135:        char* jsonfile = (char*)malloc(size+1);
+        1:  136:        if(jsonfile     == NULL)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+        -:  137:        {
+    #####:  138:                fprintf(stderr,"ERROR: memory allocation\n");
+call    0 never executed
+    #####:  139:                return 1;
+        -:  140:        }
+        -:  141:
+        1:  142:        int read_size = fread(jsonfile, 1, size, file);
+call    0 returned 1
+        1:  143:        if(read_size != size)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+        -:  144:        {
+    #####:  145:                fprintf(stderr, "ERROR: read file\n");
+call    0 never executed
+    #####:  146:                return 1;
+        -:  147:        }
+        -:  148:
+        1:  149:        fclose(file);
+call    0 returned 1
+        1:  150:        jsonfile[size] = '\0';
+        -:  151:
+        1:  152:	if(parseJson(jsonfile)){
+call    0 returned 1
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1
+    #####:  153:		fprintf(stderr, "ERROR: parseJson()");
+call    0 never executed
+        -:  154:	}
+        1:  155:	free(jsonfile);
+        -:  156:}

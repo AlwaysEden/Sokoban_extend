@@ -488,7 +488,7 @@ int check_validation(int cmd){
 			}else return 0;	
 			break;
 	}
-
+	return 0;
 }
 
 //update cells by cmd(0-15), 
