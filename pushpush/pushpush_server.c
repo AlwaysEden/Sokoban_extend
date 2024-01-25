@@ -118,7 +118,6 @@ void disconnected(int sock)
 	{
 		game_start = 0;
 		usr_cnt = 0;
-		exit(0);
 	}
 	pthread_mutex_unlock(&mutx);
 	close(sock);

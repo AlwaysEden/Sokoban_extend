@@ -2,14 +2,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include <gtk/gtk.h>
 #include <unistd.h> 
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <pthread.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include "../cJSON.h"
+#include <gtk/gtk.h>
+#include "include/cJSON.h"
+#include "include/client.h"
+
 
 #define NAME_SIZE 16
 #define queue_size 20
@@ -19,6 +21,7 @@
 #define GDK_KEY_LEFT 65361
 #define GDK_KEY_RIGHT 65363
 
+/*
 //object data structures
 typedef struct location{
     int x;
@@ -41,6 +44,7 @@ typedef struct object_data{
     location_t * item_locations;
     location_t * block_locations;
 }object_data_t;
+*/
 
 enum entity {
 	EMPTY = 0,
@@ -114,7 +118,20 @@ int parseJson(char * jsonfile);
 void *recv_msg(void * arg);
 void cannot_enter();
 int connection(char *arg[]);
+int start_game(int fd);
 
+int start_game(int fd){
+	int game_started;
+	if (recv_bytes(fd, (void*)&game_started, sizeof(int)) == -1) 
+    		return 1;
+
+	if(game_started){
+		cannot_enter();
+		close(fd);
+		return 0;
+	}
+	return 0;
+}
 
 int connection(char *arg[]){
 
@@ -123,8 +140,8 @@ int connection(char *arg[]){
 	
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr(argv[1]);
-	serv_addr.sin_port = htons(atoi(argv[2]));
+	serv_addr.sin_addr.s_addr = inet_addr(arg[1]);
+	serv_addr.sin_port = htons(atoi(arg[2]));
 	  
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
 	{
@@ -136,7 +153,7 @@ int connection(char *arg[]){
 }
 
 //this is MAIN
-#ifndef test
+#ifndef TEST 
 int main(int argc, char *argv[]) {
 
 	//get the username from stdin 
@@ -153,16 +170,13 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	connection(argv);
-
-	int game_started;
-	if (recv_bytes(sock, (void*)&game_started, sizeof(int)) == -1) 
-    	return 1;
-
-	if(game_started){
-		cannot_enter();
-		close(sock);
-		return 0;
+	if(connection(argv)){
+		fprintf(stderr,"ERROR: connection");
+		exit(1);
+	}
+	
+	if(start_game(sock)){
+		fprintf(stderr,"ERROR: start_game");
 	}
 	
 	while(1){
@@ -188,19 +202,18 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "id : %d\n", my_id);
 	
     // recv json file
-    int json_size;
-    if (recv_bytes(sock, (void*)&(json_size), sizeof(int)) == -1)
+    	int json_size;
+   	if (recv_bytes(sock, (void*)&(json_size), sizeof(int)) == -1)
 		return 1;
 
-    char * json_format = malloc(sizeof(char) * json_size);
-    if (recv_bytes(sock, json_format, json_size) == -1)
+    	char * json_format = malloc(sizeof(char) * json_size);
+    	if (recv_bytes(sock, json_format, json_size) == -1)
 		return 1;
 
 	if(parseJson(json_format))
 		return 1;
 	
 	// receive all player's name size, name 
-	// test hardcoding
 	for (int i = 0; i < Model.max_user; i++) {
 		int name_size;
 		if (recv_bytes(sock, (void*)&(name_size), sizeof(name_size)) == -1)
@@ -536,7 +549,7 @@ int move(int cmd, int movement){
 	}else if(movement > (0-ITEM)){ //valid and item-scoreup
 		fprintf(stderr,"move for success %d!!!\n", movement);	
 		update_model((0-movement), -1, -1);	
-		score_up(user_idx);
+		//score_up(user_idx);
 		current_num_item--;
 	}
 	update_model(user_idx+1, target_x,target_y);	
@@ -630,6 +643,7 @@ void update_cell(){
     }
 
 }
+
 int item_idxToId(int idx){ return ((0-(idx+1))*10); } //0 -> -10
 int item_idToIdx(int id){ return (((0-id)/10)-1); }//-10 -> 0
 
@@ -658,34 +672,91 @@ int parseJson(char * jsonfile) {
 
     cJSON* root;
 	root = cJSON_Parse(jsonfile);
-	if (root == NULL) {
+	if (root == NULL || root->child == NULL) {
 		printf("JSON parsing error: %s\n", cJSON_GetErrorPtr());
         	return 1;
     	}
         
 	cJSON* timeout = cJSON_GetObjectItem(root, "timeout");
+	if(timeout == NULL){
+		fprintf(stderr, "ERROR: timeout\n");
+		return 1;
+	}
 	Model.timeout = timeout->valueint;
 	cJSON* max_user = cJSON_GetObjectItem(root, "max_user");
+	if(max_user == NULL){
+		fprintf(stderr, "ERROR: max_user\n");
+		return 1;
+	}
 	Model.max_user = max_user->valueint;
 
 	cJSON* map = cJSON_GetObjectItem(root, "map");
+	if(map == NULL){
+		fprintf(stderr, "ERROR: map\n");
+		return 1;
+	}
 	cJSON* map_width = cJSON_GetObjectItem(map, "map_width");
+	if(map_width == NULL){
+		fprintf(stderr, "ERROR: map_width\n");
+		return 1;
+	}
 	Model.map_width = map_width->valueint;	
 	cJSON* map_height = cJSON_GetObjectItem(map, "map_height");
+	if(map_width == NULL){
+		fprintf(stderr, "ERROR: map_width\n");
+		return 1;
+	}
 	Model.map_height = map_height->valueint;
 
 	cJSON* user = cJSON_GetObjectItem(root, "user");
+	if(user == NULL){
+		fprintf(stderr, "ERROR: user\n");
+		return 1;
+	}
+	int num_user = cJSON_GetArraySize(user);
+	if(num_user != Model.max_user){
+		fprintf(stderr,  "ERROR: max_user != user array size\n");
+		return 1;
+	}
 	Model.users = (struct user *)malloc(sizeof(struct user) * Model.max_user);
-	for(int i = 0; i < Model.max_user; i++){
+	for(int i = 0; i < num_user; i++){
 		memset(Model.users[i].name, 0, sizeof(NAME_SIZE));
 		Model.users[i].score = 0;
 		cJSON* user_array = cJSON_GetArrayItem(user,i);
-	    cJSON* base = cJSON_GetObjectItem(user_array,"base"); 
+		if(user_array == NULL){
+			fprintf(stderr, "ERROR: user_array\n");
+			return 1;
+		}
+		cJSON* base = cJSON_GetObjectItem(user_array,"base"); 
+		if(base == NULL){
+			fprintf(stderr, "ERROR: base\n");
+			return 1;
+		}
 		cJSON* base_x = cJSON_GetArrayItem(base, 0);
+		if(base_x == NULL){
+			fprintf(stderr, "ERROR: base_x\n");
+			return 1;
+		}
 		cJSON* base_y = cJSON_GetArrayItem(base, 1);
+		if(base_y == NULL){
+			fprintf(stderr, "ERROR: base_y\n");
+			return 1;
+		}
 		cJSON* user_location = cJSON_GetObjectItem(user_array,"location"); 
+		if(user_location == NULL){
+			fprintf(stderr, "ERROR: user_location\n");
+			return 1;
+		}
 		cJSON* user_x = cJSON_GetArrayItem(user_location, 0);
+		if(user_x == NULL){
+			fprintf(stderr, "ERROR: user_x\n");
+			return 1;
+		}
 		cJSON* user_y = cJSON_GetArrayItem(user_location, 1);
+		if(user_y == NULL){
+			fprintf(stderr, "ERROR: user_y\n");
+			return 1;
+		}
 		Model.users[i].user_loc.x = user_x->valueint;
 		Model.users[i].user_loc.y = user_y->valueint;
 		Model.users[i].base_loc.x = base_x->valueint;
@@ -698,13 +769,33 @@ int parseJson(char * jsonfile) {
 	}
 	
 	cJSON * item = cJSON_GetObjectItem(root, "item_location");
+	if(item == NULL){
+		fprintf(stderr,"ERROR: item\n");
+		return 1;
+	}
 	num_item = cJSON_GetArraySize(item);
+	if(num_item == 0){
+		fprintf(stderr,"ERROR: num_item\n");
+		return 1;
+	}
 	current_num_item = num_item;
 	Model.item_locations = (struct location *)malloc(sizeof(struct location) * num_item); 
 	for(int i = 0; i < num_item; i++){
 		cJSON* item_array = cJSON_GetArrayItem(item,i);
+		if(item_array == NULL){
+			fprintf(stderr, "ERROR: item_array\n");
+			return 1;
+		}	
 		cJSON* item_x = cJSON_GetArrayItem(item_array, 0);
+		if(item_x == NULL){
+			fprintf(stderr, "ERROR: item_x\n");
+			return 1;
+		}	
 		cJSON* item_y = cJSON_GetArrayItem(item_array, 1);
+		if(item_y == NULL){
+			fprintf(stderr, "ERROR: item_y\n");
+			return 1;
+		}
 		Model.item_locations[i].x = item_x->valueint;
 		Model.item_locations[i].y = item_y->valueint;
 	#ifdef DEBUG
@@ -714,12 +805,32 @@ int parseJson(char * jsonfile) {
 	}	
 
 	cJSON * block = cJSON_GetObjectItem(root, "block_location");
+	if(block == NULL){
+		fprintf(stderr,"ERROR: block\n");
+		return 1;
+	}
 	num_block = cJSON_GetArraySize(block);
+	if(num_block == 0){
+		fprintf(stderr, "ERROR: num_block\n");
+		return 1;
+	}
 	Model.block_locations = (struct location *)malloc(sizeof(struct location) * num_block); 
 	for(int i = 0; i < num_block; i++){
 		cJSON* block_array = cJSON_GetArrayItem(block,i);
+		if(block_array == NULL){
+			fprintf(stderr, "ERROR: block_array\n");
+			return 1;
+		}
 		cJSON* block_x = cJSON_GetArrayItem(block_array, 0);
+		if(block_x == NULL){
+			fprintf(stderr, "ERROR: block_x\n");
+			return 1;
+		}
 		cJSON* block_y = cJSON_GetArrayItem(block_array, 1);
+		if(block_y == NULL){
+			fprintf(stderr, "ERROR: block_y\n");
+			return 1;
+		}
 		Model.block_locations[i].x = block_x->valueint;
 		Model.block_locations[i].y = block_y->valueint;
 	#ifdef DEBUG
@@ -739,6 +850,7 @@ void handle_timeout(int signum) {
     //gameover 신호 보내기 
 	gameover();
 }
+
 void * recv_msg(void * arg)   // read thread main
 {
 	int sock = *((int*)arg);
@@ -752,7 +864,7 @@ void * recv_msg(void * arg)   // read thread main
         fprintf(stderr, "From Server : %d\n", recv_cmd);
 
 		pthread_mutex_lock(&mutx);
-		while((rear+1)%queue_size == front)
+		while((rear+1)%queue_size == front) //Queue가 꽉 차있는 경우.
 			pthread_cond_wait(&cond, &mutx);
 		rear = (rear + 1) % queue_size;
 		event_arry[rear] = recv_cmd;
@@ -769,7 +881,7 @@ int recv_bytes(int sock_fd, void * buf, size_t len){
     while(acc < len)
     {
         size_t recved;
-        recved = recv(sock_fd, p, len - acc, 0);
+        recved = read(sock_fd, p, len - acc);
         if(recved  == -1 || recved == 0){
             return -1;
         }
@@ -785,7 +897,7 @@ int send_bytes(int sock_fd, void * buf, size_t len){
 
     while(acc < len){
         size_t sent;
-        sent = send(sock_fd, p, len - acc, 0);
+        sent = write(sock_fd, p, len - acc);
         if(sent == -1 || sent == 0){
             return -1;
         }
@@ -822,7 +934,7 @@ gboolean handle_cmd(gpointer user_data) {
 		move(event, movement);
 		display_screen();
 		if( current_num_item <= 0) {
-			gameover();
+		pthread_mutex_lock(&mutx);	gameover();
 		}
 	} 
 

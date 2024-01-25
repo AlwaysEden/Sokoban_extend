@@ -1,7 +1,7 @@
 {
 
 "timeout" : 30,
-"max_user" : 1,
+"max_user" : 2,
 "map": {
 	"map_width" : 10,
 	"map_height" : 10
@@ -18,8 +18,8 @@
 {
 "username" : "",
 "score" : 0,
-"base" : [0,0],
-"location" : [0,0]
+"base" : [1,1],
+"location" : [1,1]
 }
 ],
 

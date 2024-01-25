@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include "../cJSON.h"
+#include "lib/cJSON.h"
 
 #define BUF_SIZE 256
 #define MAX_USER 4
@@ -185,7 +185,7 @@ void *handle_clnt(void * arg)
 	{
 		if (clnt_sock == clnt_socks[i])
 		{
-			name_sizename_sizeread_byte(clnt_sock, (void *)user_name[i], name_size);
+			name_size = read_byte(clnt_sock, (void *)user_name[i], name_size);
 			printf("%s is enter\n",user_name[i]);
 			write_byte(clnt_sock, (void *)&i, sizeof(int));
 			usr_cnt++;
@@ -235,7 +235,7 @@ void error_handling(char * msg)
 //this is MAIN function
 int main(int argc, char *argv[])
 {
-
+	struct sockaddr_in serv_adr, clnt_adr;
 	pthread_t t_id;
 	if (argc != 2) {
 		printf("Usage : %s <port>\n", argv[0]);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 		exit(1);
 
 	pthread_mutex_init(&mutx, NULL);
-	serv_sock = socket(PF_INET, SOCK_STREAM, 0);
+	int serv_sock = socket(PF_INET, SOCK_STREAM, 0);
 
 	memset(&serv_adr, 0, sizeof(serv_adr));
 	serv_adr.sin_family = AF_INET; 
@@ -261,8 +261,8 @@ int main(int argc, char *argv[])
 	
 	while (1)
 	{
-		clnt_adr_sz = sizeof(clnt_adr);
-		clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_adr, &clnt_adr_sz);
+		int clnt_adr_sz = sizeof(clnt_adr);
+		int clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_adr, &clnt_adr_sz);
 		
 		write_byte(clnt_sock, (void *)&game_start, sizeof(int));
 		if(game_start == 1) //게임 중 플래그 start 
