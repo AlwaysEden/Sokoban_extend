@@ -9,9 +9,9 @@ cJSON_path = ../cJSON.c
 compile: server client
 
 server: pushpush_server.c $(cJSON_path)
-	clang -fprofile-arcs -ftest-coverage -o $@ $^ -pthread
+	gcc -o $@ $^ -pthread
 client: pushpush_client.c $(cJSON_path)
-	clang -fprofile-arcs -ftest-coverage -o $@ $^ $(LIBS) -DDEBUG
+	gcc -o $@ $^ $(LIBS) -DDEBUG
 rs:
 	echo $(JSON) | ./server $(PORT)
 rc:
