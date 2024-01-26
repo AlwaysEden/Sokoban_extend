@@ -23,13 +23,14 @@ test_read_write:
 	$(CC) $(CFLAGS) -o test_client cJSON.o pushpush_client.o unit_test.c $(LIBS) -D RW 
 test_parsejson: 
 	$(CC) $(CFLAGS) -o test_client cJSON.o pushpush_client.o unit_test.c $(LIBS) -D PARSEJSON
-
 test_update_cell:
 	$(CC) $(CFLAGS) -o test_client cJSON.o pushpush_client.o unit_test.c $(LIBS) -D UPDATE_CELL 
 test_move:
 	$(CC) $(CFLAGS) -o test_client cJSON.o pushpush_client.o unit_test.c $(LIBS) -D MOVE 
 test_check_val:
 	$(CC) $(CFLAGS) -o test_client cJSON.o pushpush_client.o unit_test.c $(LIBS) -D CHECK_VAL 
+test_recv_handle:
+	$(CC) $(CFLAGS) -o test_client cJSON.o pushpush_client.o unit_test.c $(LIBS) -D RECV_HANDLE 
 
 #Fuzzing using AFL++
 fuzz_cJSON: cJSON.c
@@ -42,10 +43,13 @@ fuzz_parsejson:
 	$(FCC) -o $@ cJSON.o pushpush_client.o unit_test.c $(LIBS) -D PARSEJSON 
 fuzz_check_val:
 	$(FCC) -o $@ cJSON.o pushpush_client.o unit_test.c $(LIBS) -D CHECK_VAL 
+fuzz_recv_handle:
+	$(FCC) -o $@ cJSON.o pushpush_client.o unit_test.c $(LIBS) -D RECV_HANDLE 
 
 clean:
 	rm *.o
 	rm *.gcda
 	rm *.gcno
 	rm *.c.gcov
+	rm fuzz_*
 	rm test_client

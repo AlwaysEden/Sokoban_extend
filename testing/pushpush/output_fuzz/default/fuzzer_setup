@@ -1,6 +1,6 @@
 # environment variables:
-AFL_CUSTOM_INFO_PROGRAM=./fuzz_parsejson
-AFL_CUSTOM_INFO_PROGRAM_ARGV=@@
+AFL_CUSTOM_INFO_PROGRAM=./fuzz_recv_handle
+AFL_CUSTOM_INFO_PROGRAM_ARGV=
 AFL_CUSTOM_INFO_OUT=output_fuzz//default
 # command line:
-'/home/s21900780/AFLplusplus/afl-fuzz' '-i' 'testcases/parseJson/' '-o' 'output_fuzz/' './fuzz_parsejson' '@@'
+'/home/s21900780/AFLplusplus/afl-fuzz' '-i' 'testcases/recv_handle/' '-o' 'output_fuzz/' './fuzz_recv_handle'

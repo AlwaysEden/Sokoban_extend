@@ -605,11 +605,13 @@ void update_model(int id, int x, int y){
 	update_cell();
 	//for debug
 	for (int i = 0; i < Model.map_width; i++) {
-      for (int j = 0; j < Model.map_height; j++) {
+      		for (int j = 0; j < Model.map_height; j++) {
 		fprintf(stderr,"%3d ",map[i][j]);
 	  }
 	  fprintf(stderr,"\n");
-    }
+    	}
+	
+    
 
 }
 
@@ -861,7 +863,7 @@ void * recv_msg(void * arg)   // read thread main
 		if(recv_bytes(sock, (void *)&recv_cmd, sizeof(recv_cmd)) == -1)
 			return (void*)-1;
 
-        fprintf(stderr, "From Server : %d\n", recv_cmd);
+       		fprintf(stderr, "From Server : %d\n", recv_cmd);
 
 		pthread_mutex_lock(&mutx);
 		while((rear+1)%queue_size == front) //Queue가 꽉 차있는 경우.
@@ -910,7 +912,7 @@ int send_bytes(int sock_fd, void * buf, size_t len){
 
 gboolean handle_cmd(gpointer user_data) {
 	int event;
-    pthread_mutex_lock(&mutx);
+        pthread_mutex_lock(&mutx);
 	if(rear == front)
 	{
 		pthread_mutex_unlock(&mutx);
@@ -932,7 +934,7 @@ gboolean handle_cmd(gpointer user_data) {
 	if((movement = check_validation(event)) == 0) fprintf(stderr,"invalid movement!\n");
 	else{	
 		move(event, movement);
-		display_screen();
+		//display_screen();
 		if( current_num_item <= 0) {
 		pthread_mutex_lock(&mutx);	gameover();
 		}

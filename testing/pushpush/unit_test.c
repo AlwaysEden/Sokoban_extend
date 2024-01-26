@@ -3,6 +3,9 @@
 #include "include/cJSON.h"
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <pthread.h>
 
 
 extern int ** map; // cell
@@ -309,13 +312,88 @@ int main(int argc, char *argv[]){
 //recv_msg(), handle_cmd()
 #ifdef RECV_HANDLE
 extern int event_arry[20];
-extern int rear;
-extern int front;
+extern int rear ;
+extern int front ;
 int main(int argc, char *argv[]){
 	
+	char jsonpath[] = "./testcases/parseJson/map1.json";
 
+	char stdin_input[256];
+	read(STDIN_FILENO, stdin_input, sizeof(stdin_input));
+	
+	struct stat sb;
+	if(stat(jsonpath, &sb) == -1){
+		fprintf(stderr,"ERROR: stat\n");
+		exit(1);
+	}
 
+	int file_size = sb.st_size;
+	
+	char *buf;
+	buf = (char *)malloc(sizeof(char) * file_size);
+	if(buf == NULL){
+		fprintf(stderr, "ERROR: malloc\n");
+		exit(1);
+	}
+	int json_fd;
+	json_fd = open(jsonpath, O_RDONLY);
+	read(json_fd, buf, file_size);
+	
+	if(parseJson(buf)){
+		fprintf(stderr, "ERROR: parseJson\n");
+		free(buf);
+		exit(1);
+	}else{
+		fprintf(stderr, "PASS\n");
+	}
 
+	map = (int **) malloc (sizeof(int *) * Model.map_width);
+        for(int i=0;i<Model.map_width;i++){
+                map[i] =(int *) malloc(sizeof(int) * Model.map_height);
+        }
+
+	update_cell();
+	
+
+	int fd[2];
+	if(pipe(fd) == -1){
+		fprintf(stderr, "ERROR: pipe\n");
+		return 1;
+	}
+
+        char *token = strtok(stdin_input, " ");
+        int tmp = 0;
+	
+	int i = 0;
+	while(token != NULL){
+                tmp = atoi(token);
+                if( !(0 <= tmp  && tmp <= Model.max_user *4)){
+                        return 1;
+                }
+		if(send_bytes(fd[1],(void*)&tmp,sizeof(int)) == -1){
+			fprintf(stderr,"ERROR: send_byte\n");
+			return 1;
+		}
+       	        fprintf(stderr, "%d ",tmp);
+       	        token = strtok(NULL, " ");
+		i++;
+        }
+	close(fd[1]);
+	
+	recv_msg( (void *)&fd[0]);
+
+	for(int a = 0; a < i; a++){
+		handle_cmd(NULL);
+	}
+	/*
+	pthread_t pid_1;
+	pthread_t pid_2;
+	pthread_create(&pid_1, NULL, recv_msg, (void *)&fd[0]);
+	pthread_create(&pid_2, NULL, (void*)&handle_cmd, NULL);
+
+	pthread_join(pid_1, NULL);
+	pthread_join(pid_2, NULL);
+	*/
 }
 #endif
 
