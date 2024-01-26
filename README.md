@@ -24,4 +24,4 @@ Server is just Controller doing echo. Therefore, server receive the request from
 You need to check the enviroment using gtk 2.0. We've checked X11 to play game in Mac OS. If you are Window user, you can play game with Mobaxterm.
 
 ## In Game
-<img src= 
+<img src= https://github.com/AlwaysEden/Sokoban_extend/blob/main/gamePlay.png>
