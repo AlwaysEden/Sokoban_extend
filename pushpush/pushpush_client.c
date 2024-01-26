@@ -643,36 +643,97 @@ void gameover(){
 
 int parseJson(char * jsonfile) {
 
-    cJSON* root;
+    	cJSON* root;
 	root = cJSON_Parse(jsonfile);
-	if (root == NULL) {
+	if (root == NULL || root->child == NULL) {
 		printf("JSON parsing error: %s\n", cJSON_GetErrorPtr());
         	return 1;
     	}
         
 	cJSON* timeout = cJSON_GetObjectItem(root, "timeout");
+	if(timeout == NULL || timeout->valueint <= 0 || timeout->valueint > INT_MAX ){
+		fprintf(stderr, "ERROR: timeout\n");
+		return 1;
+	}
 	Model.timeout = timeout->valueint;
+
 	cJSON* max_user = cJSON_GetObjectItem(root, "max_user");
+	if(max_user == NULL || max_user->valueint <= 0 || max_user->valueint > 8){
+		fprintf(stderr, "ERROR: max_user\n");
+		return 1;
+	}
 	Model.max_user = max_user->valueint;
 
 	cJSON* map = cJSON_GetObjectItem(root, "map");
+	if(map == NULL){
+		fprintf(stderr, "ERROR: map\n");
+		return 1;
+	}
 	cJSON* map_width = cJSON_GetObjectItem(map, "map_width");
-	Model.map_width = map_width->valueint;	
+	if(map_width == NULL || map_width->valueint < 5 || map_width->valueint > 1024){
+		fprintf(stderr, "ERROR: map_width\n");
+		return 1;
+	}
+	Model.map_width = map_width->valueint;
+
 	cJSON* map_height = cJSON_GetObjectItem(map, "map_height");
+	if(map_height == NULL || map_height->valueint < 5 || map_height->valueint > 1024){
+		fprintf(stderr, "ERROR: map_width\n");
+		return 1;
+	}
 	Model.map_height = map_height->valueint;
 
 	cJSON* user = cJSON_GetObjectItem(root, "user");
+	if(user == NULL){
+		fprintf(stderr, "ERROR: user\n");
+		return 1;
+	}
+	int num_user = cJSON_GetArraySize(user);
+	if(num_user != Model.max_user){
+		fprintf(stderr,  "ERROR: max_user != user array size\n");
+		return 1;
+	}
+	
 	Model.users = (struct user *)malloc(sizeof(struct user) * Model.max_user);
-	for(int i = 0; i < Model.max_user; i++){
+	for(int i = 0; i < num_user; i++){
 		memset(Model.users[i].name, 0, sizeof(NAME_SIZE));
 		Model.users[i].score = 0;
 		cJSON* user_array = cJSON_GetArrayItem(user,i);
-	    cJSON* base = cJSON_GetObjectItem(user_array,"base"); 
+		if(user_array == NULL){
+			fprintf(stderr, "ERROR: user_array\n");
+			return 1;
+		}
+		cJSON* base = cJSON_GetObjectItem(user_array,"base"); 
+		if(base == NULL){
+			fprintf(stderr, "ERROR: base\n");
+			return 1;
+		}
 		cJSON* base_x = cJSON_GetArrayItem(base, 0);
+		if(base_x == NULL || base_x->valueint < 0 || base_x->valueint > Model.map_width){
+			fprintf(stderr, "ERROR: base_x\n");
+			return 1;
+		}
 		cJSON* base_y = cJSON_GetArrayItem(base, 1);
+		if(base_y == NULL || base_y->valueint < 0 || base_y->valueint > Model.map_height){
+			fprintf(stderr, "ERROR: base_x\n");
+			return 1;
+		}
+
 		cJSON* user_location = cJSON_GetObjectItem(user_array,"location"); 
+		if(user_location == NULL){
+			fprintf(stderr, "ERROR: user_location\n");
+			return 1;
+		}
 		cJSON* user_x = cJSON_GetArrayItem(user_location, 0);
+		if(user_x == NULL || user_x->valueint < 0 || user_x->valueint > Model.map_width){
+			fprintf(stderr, "ERROR: user_x\n");
+			return 1;
+		}
 		cJSON* user_y = cJSON_GetArrayItem(user_location, 1);
+		if(user_y == NULL || user_y->valueint < 0 || user_y->valueint > Model.map_height){
+			fprintf(stderr, "ERROR: user_x\n");
+			return 1;
+		}
 		Model.users[i].user_loc.x = user_x->valueint;
 		Model.users[i].user_loc.y = user_y->valueint;
 		Model.users[i].base_loc.x = base_x->valueint;
@@ -685,13 +746,33 @@ int parseJson(char * jsonfile) {
 	}
 	
 	cJSON * item = cJSON_GetObjectItem(root, "item_location");
+	if(item == NULL){
+		fprintf(stderr,"ERROR: item\n");
+		return 1;
+	}
 	num_item = cJSON_GetArraySize(item);
+	if(num_item == 0){
+		fprintf(stderr,"ERROR: num_item\n");
+		return 1;
+	}
 	current_num_item = num_item;
 	Model.item_locations = (struct location *)malloc(sizeof(struct location) * num_item); 
 	for(int i = 0; i < num_item; i++){
 		cJSON* item_array = cJSON_GetArrayItem(item,i);
+		if(item_array == NULL){
+			fprintf(stderr, "ERROR: item_array\n");
+			return 1;
+		}	
 		cJSON* item_x = cJSON_GetArrayItem(item_array, 0);
+		if(item_x == NULL || item_x->valueint < 0 || item_x->valueint > Model.map_width){
+			fprintf(stderr, "ERROR: item_x\n");
+			return 1;
+		}	
 		cJSON* item_y = cJSON_GetArrayItem(item_array, 1);
+		if(item_y == NULL || item_y->valueint < 0 || item_y->valueint > Model.map_height){
+			fprintf(stderr, "ERROR: item_x\n");
+			return 1;
+		}
 		Model.item_locations[i].x = item_x->valueint;
 		Model.item_locations[i].y = item_y->valueint;
 	#ifdef DEBUG
@@ -701,12 +782,32 @@ int parseJson(char * jsonfile) {
 	}	
 
 	cJSON * block = cJSON_GetObjectItem(root, "block_location");
+	if(block == NULL){
+		fprintf(stderr,"ERROR: block\n");
+		return 1;
+	}
 	num_block = cJSON_GetArraySize(block);
+	if(num_block == 0){
+		fprintf(stderr, "ERROR: num_block\n");
+		return 1;
+	}
 	Model.block_locations = (struct location *)malloc(sizeof(struct location) * num_block); 
 	for(int i = 0; i < num_block; i++){
 		cJSON* block_array = cJSON_GetArrayItem(block,i);
+		if(block_array == NULL){
+			fprintf(stderr, "ERROR: block_array\n");
+			return 1;
+		}
 		cJSON* block_x = cJSON_GetArrayItem(block_array, 0);
+		if(block_x == NULL || block_x->valueint < 0 || block_x->valueint > Model.map_width){
+			fprintf(stderr, "ERROR: block_x\n");
+			return 1;
+		}
 		cJSON* block_y = cJSON_GetArrayItem(block_array, 1);
+		if(block_y == NULL || block_y->valueint < 0 || block_y->valueint > Model.map_height){
+			fprintf(stderr, "ERROR: block_x\n");
+			return 1;
+		}
 		Model.block_locations[i].x = block_x->valueint;
 		Model.block_locations[i].y = block_y->valueint;
 	#ifdef DEBUG

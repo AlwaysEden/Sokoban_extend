@@ -9,7 +9,7 @@ cJSON_path = ../cJSON.c
 compile: server client
 
 server: pushpush_server.c $(cJSON_path)
-	gcc -o $@ $^ -pthread
+	gcc -o $@ $^ -pthread -g
 client: pushpush_client.c $(cJSON_path)
 	gcc -o $@ $^ $(LIBS) -DDEBUG
 rs:
